@@ -37,7 +37,14 @@ class TwitterBot:
             return new_since_id
         return since_id
 
+    def reply_to_status(self, reply, in_reply_to_status_id):
+        try:
+            status = self.api.update_status(status=reply, in_reply_to_status_id=in_reply_to_status_id , auto_populate_reply_metadata=True)
+        except:
+            return None
+        return status
+
 
 if __name__ == "__main__":
     twitterBot = TwitterBot()
-    print(twitterBot.get_statuses(since_id=1195871282102820864))
+    twitterBot.reply_to_status()

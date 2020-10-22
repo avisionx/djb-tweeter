@@ -2,7 +2,7 @@ import os
 
 import jsonlines
 from dotenv import load_dotenv
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_basicauth import BasicAuth
 
 from main import TwitterBot
@@ -55,3 +55,23 @@ def tweets():
     if os.path.exists(COMPLAINTS_FILE):
         os.remove(COMPLAINTS_FILE)
     return jsonify(complaints_list)
+
+# using basic auth as authorization header with username and password
+# send post request to this api in application/json format and use reply, in_reply_to_status_id
+# as 2 params to send corresponding reply
+@app.route('/tweet-reply', methods=['POST'])
+@basic_auth.required
+def tweet_reply():
+    try:
+        data = request.get_json()
+    except:
+        return "error"
+    reply = data.get('reply', None)
+    in_reply_to_status_id = data.get('in_reply_to_status_id', None)
+    if not reply or not in_reply_to_status_id:
+        return "error"
+    twitterBot = TwitterBot()
+    status = twitterBot.reply_to_status(reply, in_reply_to_status_id)
+    if(status):
+        return jsonify(status._json)
+    return "error"
