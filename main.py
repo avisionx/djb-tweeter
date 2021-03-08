@@ -49,6 +49,8 @@ ADDRESS:
 CONTACT NO.:
 KNO:
 ISSUE:
+
+Alternatively, you can DM the above sought details in our inbox.
                         """
                     else:
                         jsonTweet["formated_data"] = data
