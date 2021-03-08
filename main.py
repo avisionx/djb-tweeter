@@ -37,8 +37,8 @@ class TwitterBot:
             with jsonlines.open(COMPLAINTS_FILE, mode='a') as writer:
                 new_since_id = since_id
                 for status in statuses:
-                    writer.write(status._json)
-                    _, reply_need_help = ComplaintParser().parse(status.text)
+                    jsonTweet = status._json
+                    data, reply_need_help = ComplaintParser().parse(status.text)
                     if reply_need_help:
                         reply = """
                         Thank you for contacting Delhi Jal Board! You're requested to reply in the 
@@ -51,7 +51,10 @@ KNO:
 ISSUE:
                         """
                     else:
+                        jsonTweet["formated_data"] = data
                         reply = "Thank you for contacting Delhi Jal Board! Your complaint has been registered with us. We'll try and resolve it as soon as possible."
+                    writer.write(jsonTweet)
+                    self.reply_to_status(reply, status.id)
                     new_since_id = max(new_since_id, status.id)
             return new_since_id
         return since_id
@@ -67,4 +70,4 @@ ISSUE:
 
 if __name__ == "__main__":
     twitterBot = TwitterBot()
-    twitterBot.reply_to_status()
+    print(twitterBot.reply_to_status())
