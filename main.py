@@ -1,8 +1,10 @@
 import os
-import tweepy
-import jsonlines
 
+import jsonlines
+import tweepy
 from dotenv import load_dotenv
+
+from helpers import ComplaintParser
 
 load_dotenv()
 
@@ -13,16 +15,19 @@ CONSUMER_SECRET = os.getenv("CONSUMER_SECRET")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
 
+
 def createFileIfNotExist(filename):
     with open(filename, 'a+') as outfile:
         outfile.close()
+
 
 class TwitterBot:
 
     def __init__(self):
         auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
         auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-        self.api = tweepy.API(auth,  wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+        self.api = tweepy.API(auth,  wait_on_rate_limit=True,
+                              wait_on_rate_limit_notify=True)
 
     def get_statuses(self, since_id=1):
         statuses = []
@@ -33,14 +38,29 @@ class TwitterBot:
                 new_since_id = since_id
                 for status in statuses:
                     writer.write(status._json)
+                    _, reply_need_help = ComplaintParser().parse(status.text)
+                    if reply_need_help:
+                        reply = """
+                        Thank you for contacting Delhi Jal Board! You're requested to reply in the 
+below given pattern ONLY for speedy redressal:
+
+NAME:
+ADDRESS:
+CONTACT NO.:
+KNO:
+ISSUE:
+                        """
+                    else:
+                        reply = "Thank you for contacting Delhi Jal Board! Your complaint has been registered with us. We'll try and resolve it as soon as possible."
                     new_since_id = max(new_since_id, status.id)
             return new_since_id
         return since_id
 
     def reply_to_status(self, reply, in_reply_to_status_id):
         try:
-            status = self.api.update_status(status=reply, in_reply_to_status_id=in_reply_to_status_id , auto_populate_reply_metadata=True)
-        except:
+            status = self.api.update_status(
+                status=reply, in_reply_to_status_id=in_reply_to_status_id, auto_populate_reply_metadata=True)
+        except Exception as inst:
             return None
         return status
 
