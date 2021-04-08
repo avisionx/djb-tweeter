@@ -1,6 +1,7 @@
 import os
 
 import jsonlines
+import requests
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_basicauth import BasicAuth
@@ -22,12 +23,15 @@ app.config['BASIC_AUTH_PASSWORD'] = BASIC_AUTH_PASSWORD
 
 basic_auth = BasicAuth(app)
 
+
 def createFileIfNotExist(filename):
     with open(filename, 'a+') as outfile:
         outfile.close()
 
 # Create a cron job like so crontab -e add this username and password from .env
 # * * * * * /opt/local/bin/curl -X GET https://falken:joshua@YOUR_WEB_LINK/cron/tweets
+
+
 @app.route('/cron/tweets', methods=['GET'])
 @basic_auth.required
 def get_new_tweets():
@@ -39,10 +43,16 @@ def get_new_tweets():
     except:
         last_tweet_id_int = 1
     twitterBot = TwitterBot()
-    latest_tweet_id = twitterBot.get_statuses(since_id=last_tweet_id_int)
+    reply_redressal_url = 'https://jsonplaceholder.typicode.com/posts/1'
+    reply_main_url = 'https://jsonplaceholder.typicode.com/posts/2'
+    reply_redressal = requests.get(reply_redressal_url).json()['body']
+    reply_main = requests.get(reply_main_url).json()['body']
+    latest_tweet_id = twitterBot.get_statuses(
+        reply_main, reply_redressal, since_id=last_tweet_id_int)
     with open(TWEET_ID_FILE, 'w') as tweet_id_file:
         tweet_id_file.write(str(latest_tweet_id))
     return "success"
+
 
 @app.route('/tweets', methods=['GET'])
 @basic_auth.required
@@ -59,6 +69,8 @@ def tweets():
 # using basic auth as authorization header with username and password
 # send post request to this api in application/json format and use reply, in_reply_to_status_id
 # as 2 params to send corresponding reply
+
+
 @app.route('/tweet-reply', methods=['POST'])
 @basic_auth.required
 def tweet_reply():

@@ -29,7 +29,7 @@ class TwitterBot:
         self.api = tweepy.API(auth,  wait_on_rate_limit=True,
                               wait_on_rate_limit_notify=True)
 
-    def get_statuses(self, since_id=1):
+    def get_statuses(self, reply_main, reply_redressal, since_id=1):
         statuses = []
         statuses = self.api.mentions_timeline(since_id=since_id)
         createFileIfNotExist(COMPLAINTS_FILE)
@@ -40,21 +40,10 @@ class TwitterBot:
                     jsonTweet = status._json
                     data, reply_need_help = ComplaintParser().parse(status.text)
                     if reply_need_help:
-                        reply = """
-                        Thank you for contacting Delhi Jal Board! You're requested to reply in the 
-below given pattern ONLY for speedy redressal:
-
-NAME:
-ADDRESS:
-CONTACT NO.:
-KNO:
-ISSUE:
-
-Alternatively, you can DM the above sought details in our inbox.
-                        """
+                        reply = reply_redressal
                     else:
                         jsonTweet["formated_data"] = data
-                        reply = "Thank you for contacting Delhi Jal Board! Your complaint has been registered with us. We'll try and resolve it as soon as possible."
+                        reply = reply_main
                     writer.write(jsonTweet)
                     self.reply_to_status(reply, status.id)
                     new_since_id = max(new_since_id, status.id)
@@ -72,4 +61,4 @@ Alternatively, you can DM the above sought details in our inbox.
 
 if __name__ == "__main__":
     twitterBot = TwitterBot()
-    print(twitterBot.reply_to_status())
+    print(twitterBot.reply_to_status("Hello", 1369231619186323456))
